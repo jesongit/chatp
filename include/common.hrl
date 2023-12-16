@@ -27,6 +27,23 @@
 -define(CATCH(Fun, Default),                    try Fun catch C:R:S -> ?PR_CATCH(C, R, S), Default end).
 -define(CATCH(Fun),                             ?CATCH(Fun, error)).
 
+-define(IF(X, Y, Z),                            case X of true -> Y; false -> Z end).
+-define(DEFAULT(X, Y),
+    begin
+        put(return, X),
+        case get(return) of
+            undefined ->
+                Y;
+            false ->
+                Y;
+            error ->
+                Y;
+            _ ->
+                erase(return)
+        end
+    end).
+
+
 -define(APP_LIST,                               [lager, ranch, gun]).
 -define(MODULE_LIST,                            [id_utils, user_mgr, robot_mgr]).
 -define(SUPERVISOR_LIST,                        [user_sup, robot_sup]).

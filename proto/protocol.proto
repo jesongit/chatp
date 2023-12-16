@@ -14,7 +14,7 @@ message protocol_request {
 
 message protocol_response {
     required protocol_cmd cmd = 1;
-    required uint32 code = 2;
+    required protocol_code code = 2;
     required bytes body = 3;
 }
 

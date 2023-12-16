@@ -18,5 +18,8 @@ term_to_binary(Binary) when is_binary(Binary) ->
 term_to_binary(Term) when is_list(Term) orelse is_tuple(Term) orelse is_map(Term) ->
     list_to_binary(io_lib:format("~w", [Term])).
 
+time() ->
+    erlang:system_time(second).
+
 test(_) ->
     skip.

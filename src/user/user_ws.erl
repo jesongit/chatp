@@ -84,6 +84,7 @@ terminate(_Reason, _Req, _State) ->
 handle_protocol(keep_alive, _) ->
     #protocol_response{cmd = keep_alive, code = ok, body = protocol_pb:encode_msg(#keep_alive_response{})};
 handle_protocol(Cmd, Body) ->
+    ?DEBUG("Cmd ~p Body ~p ~n", [Cmd, Body]),
     try
         Request = list_to_atom(atom_to_list(Cmd) ++ "_request"),
         Return = user_handle:handle(protocol_pb:decode_msg(Body, Request)),

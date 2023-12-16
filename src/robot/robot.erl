@@ -17,8 +17,10 @@
 
 -define(SERVER,                             robot_mgr).
 -define(SERVER_IP,                          "127.0.0.1").
+-define(KEEP_ALIVE_INTERVAL,                5000).
+-define(CHECK_ALIVE_SECONDS,                10).
 
--record(state, {username, pid, ref}).
+-record(state, {username, pid, ref, alive_time = 0}).
 
 start(Username) ->
     gen_server:call(?SERVER, {?FUNCTION_NAME, Username}).
@@ -42,6 +44,7 @@ start_link(Username) ->
 init([Username]) ->
     {ok, ConnPid, StreamRef} = connect_server(),
     ?INFO("User: ~s ConnPid ~p StremRef ~p ~n", [Username, ConnPid, StreamRef]),
+    erlang:send_after(?KEEP_ALIVE_INTERVAL * 2, self(), check_alive),
     {ok, #state{username = Username, pid = ConnPid, ref = StreamRef}}.
 
 handle_call(_Request, _From, State = #state{}) ->
@@ -64,8 +67,10 @@ handle_info({gun_up, ConnPid, http}, State = #state{username = User}) ->
     ?INFO("Pid ~p Connect Successful.~n", [ConnPid]),
     handle_cast({send, user_login, #user_login_request{username = User, password = User}}, State);
 handle_info(keep_alive, State = #state{}) ->
-    erlang:send_after(5000, self(), keep_alive),
-    handle_cast({send, keep_alive, #keep_alive_request{}}, State);
+    keep_alive(),
+    {noreply, State#state{alive_time = tools:time()}};
+handle_info(check_alive, State = #state{}) ->
+    check_alive(State);
 handle_info({gun_down, ConnPid, http, Name, Reason}, State = #state{}) ->
     ?INFO("Pid ~p Name ~p Reason ~w ~n", [ConnPid, Name, Reason]),
     {noreply, State};
@@ -77,7 +82,8 @@ handle_info(_Info, State = #state{}) ->
     ?INFO("~p Info ~p~n", [?FUNCTION_NAME, _Info]),
     {noreply, State}.
 
-terminate(_Reason, _State = #state{}) ->
+terminate(_Reason, _State = #state{pid = Pid}) ->
+    gun:close(Pid),
     ok.
 
 code_change(_OldVsn, State = #state{}, _Extra) ->
@@ -88,7 +94,8 @@ code_change(_OldVsn, State = #state{}, _Extra) ->
 %%%===================================================================
 
 handle_response(#keep_alive_response{}) ->
-    ?DEBUG("keep alive");
+    %% 还在
+    ok;
 handle_response(_Protocol) ->
     ?ERROR("unknown protocol ~w ~n", [_Protocol]).
 
@@ -98,6 +105,14 @@ handle_frame({binary, Binary}) ->
     #protocol_response{cmd = Cmd, body = Body} = protocol_pb:decode_msg(Binary, protocol_response),
     Response = list_to_atom(atom_to_list(Cmd) ++ "_response"),
     handle_response(protocol_pb:decode_msg(Body, Response)).
+
+keep_alive() ->
+    gen_server:cast(self(), {send, keep_alive, #keep_alive_request{}}),
+    erlang:send_after(?KEEP_ALIVE_INTERVAL, self(), keep_alive).
+
+check_alive(State = #state{alive_time = AliveTime}) ->
+    erlang:send_after(60000, self(), check_alive),
+    ?IF(tools:time() - AliveTime > ?KEEP_ALIVE_INTERVAL div 1000 * 2, {stop, State}, {noreply, State}).
 
 connect_server() ->
     {ok, Port} = application:get_env(chat_p, port),
