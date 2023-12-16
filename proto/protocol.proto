@@ -1,0 +1,31 @@
+enum protocol_cmd {
+    unknown = 0;
+    keep_alive = 1;
+    user_login = 1001;
+}
+enum protocol_code {
+    ok = 0;
+    error = 1;
+}
+message protocol_request {
+    required protocol_cmd cmd = 1;
+    required bytes body = 2;
+}
+
+message protocol_response {
+    required protocol_cmd cmd = 1;
+    required uint32 code = 2;
+    required bytes body = 3;
+}
+
+message keep_alive_request {}
+message keep_alive_response {}
+
+message user_login_request {
+    required string username = 1;
+    required string password = 2;
+}
+
+message user_login_response {
+    required uint64 user_id = 1;
+}
