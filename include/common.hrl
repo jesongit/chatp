@@ -30,18 +30,16 @@
 -define(IF(X, Y, Z),                            case X of true -> Y; false -> Z end).
 -define(DEFAULT(X, Y),
     begin
-        put(return, X),
-        case get(return) of
+        put('@return', X),
+        case get('@return') of
             undefined ->
                 Y;
-            false ->
-                Y;
-            error ->
-                Y;
             _ ->
-                erase(return)
+                erase('@return')
         end
     end).
+
+%%-define(ETS_LOOKUP(Tab, Key, Def),              case ets:lookup(Tab, Key) of [] -> Def; Ret -> Ret end).
 
 
 -define(APP_LIST,                               [lager, ranch, gun]).

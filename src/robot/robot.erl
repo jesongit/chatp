@@ -8,7 +8,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/1, start/1, stop/0, stop/1, send/3, pid/1, test/1]).
+-export([start_link/1, start/1, stop/0, stop/1, send/3, test/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -include("user.hrl").
@@ -31,8 +31,8 @@ stop() ->
 stop(Username) ->
     gen_server:cast(?SERVER, {?FUNCTION_NAME, Username}).
 
-send(Username, Cmd, Body) ->
-    gen_server:cast(pid(Username), {send, Cmd, Body}).
+send(Pid, Cmd, Body) when is_pid(Pid), is_atom(Cmd), is_tuple(Body) ->
+    gen_server:cast(Pid, {send, Cmd, Body}).
 
 %%%===================================================================
 %%% Spawning and gen_server implementation
@@ -94,15 +94,6 @@ code_change(_OldVsn, State = #state{}, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-handle_response(#keep_alive_response{}) ->
-    %% 保活协议
-    ok;
-handle_response(#user_login_response{user_id = UserId, username = Username}) ->
-    %% 登录成功
-    ets:update_element(?ETS_ROBOT, Username, {#user_robot.user_id, UserId});
-handle_response(_Protocol) ->
-    ?ERROR("unknown protocol ~w ~n", [_Protocol]).
-
 user_login(Username, Password) ->
     gen_server:cast(self(), {send, user_login, #user_login_request{username = Username, password = Password}}).
 
@@ -133,16 +124,14 @@ connect_server() ->
 handle_frame({close, Code, Reason}) ->
     ?INFO("Close Code ~p Reason ~w~n", [Code, Reason]);
 handle_frame({binary, Binary}) ->
-    #protocol_response{cmd = Cmd, body = Body} = protocol_pb:decode_msg(Binary, protocol_response),
-    Response = list_to_atom(atom_to_list(Cmd) ++ "_response"),
-    handle_response(protocol_pb:decode_msg(Body, Response)).
-
-pid(Username) when is_binary(Username) ->
-    case ets:lookup(?ETS_ROBOT, Username) of
-        [] ->
-            not_found;
-        [#user_robot{pid = Pid}] ->
-            Pid
+    try
+        #protocol_response{cmd = Cmd, body = Body} = protocol_pb:decode_msg(Binary, protocol_response),
+        Cmd == unknown andalso throw(Body),
+        Response = list_to_atom(atom_to_list(Cmd) ++ "_response"),
+        robot_handle:response(protocol_pb:decode_msg(Body, Response))
+    catch Class:Reason:Stacktrace ->
+        ?PR_CATCH(Class, Reason, Stacktrace),
+        Class == throw andalso is_binary(Reason) andalso ?DEBUG("Reason ~ts ~n", [Reason])
     end.
 
 test(_) ->

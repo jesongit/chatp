@@ -1,32 +1,41 @@
+syntax = "proto3";
 enum protocol_cmd {
     unknown = 0;
     keep_alive = 1;
     user_login = 1001;
 }
 enum protocol_code {
-    ok = 0;
-    error = 1;
+    error = 0;
 }
+
+// 请求协议
 message protocol_request {
-    required protocol_cmd cmd = 1;
-    required bytes body = 2;
+    protocol_cmd cmd = 1;
+    bytes body = 2;
 }
 
+// 响应协议
 message protocol_response {
-    required protocol_cmd cmd = 1;
-    required protocol_code code = 2;
-    required bytes body = 3;
+    protocol_cmd cmd = 1;
+    bytes body = 3;
 }
 
+// 服务器内部错误
+message protocol_message {
+    protocol_code code = 1;
+    bytes message = 2;
+}
+
+// 正常的返回
 message keep_alive_request {}
 message keep_alive_response {}
 
 message user_login_request {
-    required string username = 1;
-    required string password = 2;
+    string username = 1;
+    string password = 2;
 }
 
 message user_login_response {
-    required uint64 user_id = 1;
-    required string username = 2;
+    uint64 user_id = 1;
+    string username = 2;
 }

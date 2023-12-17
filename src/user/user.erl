@@ -13,7 +13,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1, test/1]).
+-export([start_link/1, test/1, request/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -21,6 +21,7 @@
 -define(SERVER, ?MODULE).
 
 -include("common.hrl").
+-include("ets_name.hrl").
 
 -record(state, {user_id}).
 
@@ -31,6 +32,9 @@
 start_link(UserId) ->
     gen_server:start_link(?MODULE, [UserId], []).
 
+request(Pid, Request) ->
+    gen_server:call(Pid, {?FUNCTION_NAME, Request}).
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
@@ -39,6 +43,14 @@ init([UserId]) ->
     ?INFO("[~p] UserId ~p 启动完成", [?MODULE, UserId]),
     {ok, #state{user_id = UserId}}.
 
+handle_call({request, Request}, _From, State = #state{user_id = UserId}) ->
+    try
+        Reply = user_handle:user_request(UserId, Request),
+        {reply, Reply, State}
+    catch Class:Reason:Stacktrace ->
+        ?PR_CATCH(Class, Reason, Stacktrace),
+        {reply, #protocol_message{message = Reason}}
+    end;
 handle_call(_Request, _From, State = #state{}) ->
     ?INFO("~p Request ~p From ~p~n", [?FUNCTION_NAME, _Request, _From]),
     {reply, ok, State}.

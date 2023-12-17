@@ -13,7 +13,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, test/1, login/3]).
+-export([start_link/0, test/1, login/3, pid/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -73,6 +73,14 @@ code_change(_OldVsn, State = #state{}, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+pid(UserId) ->
+    case ets:lookup(?ETS_ONLINE, UserId) of
+        [] ->
+            undefined;
+        [#user_online{pid = Pid}] ->
+            Pid
+    end.
 
 test(_) ->
     skip.

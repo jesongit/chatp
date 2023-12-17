@@ -15,7 +15,7 @@
 -include("common.hrl").
 
 -define(IDLE_TIMEOUT,                                       60000). % 默认超时时间
--record(state,                                              {user_id}).
+-record(state,                                              {user_id = 0}).
 
 start() ->
     Dispatch = cowboy_router:compile([
@@ -38,18 +38,18 @@ init(Req, []) ->
 %% @doc ws 连接上的回调
 websocket_init(State) ->
     ?INFO("State ~w ~n", [State]),
-    Response = handle_protocol(keep_alive, <<>>),
+    Response = handle_protocol(0, keep_alive, <<>>),
     {reply, {binary, protocol_pb:encode_msg(Response)}, State}.
 
 %% @doc 接受 ws 消息
-websocket_handle({binary, Binary}, State) ->
+websocket_handle({binary, Binary}, State = #state{user_id = UserId}) ->
     ?DEBUG("Binary ~w ~n", [Binary]),
     case catch protocol_pb:decode_msg(Binary, protocol_request) of
         #protocol_request{cmd = Cmd, body = Body} ->
-            Response = handle_protocol(Cmd, Body);
+            Response = handle_protocol(UserId, Cmd, Body);
         _Ret ->
             ?ERROR("parse protocol error Ret ~w ~n", [Binary, _Ret]),
-            Response = #protocol_response{cmd = unknown, code = error, body = <<"协议解密失败"/utf8>>}
+            Response = #protocol_response{body = <<"协议解密失败"/utf8>>}
     end,
     {reply, {binary, protocol_pb:encode_msg(Response)}, State};
 websocket_handle(_Frame, State) ->
@@ -81,18 +81,18 @@ terminate(_Reason, _Req, _State) ->
     ?INFO("Reason ~p Req ~p State ~p ~n", [_Reason, _Req, _State]),
     ok.
 
-handle_protocol(keep_alive, _) ->
-    #protocol_response{cmd = keep_alive, code = ok, body = protocol_pb:encode_msg(#keep_alive_response{})};
-handle_protocol(Cmd, Body) ->
+handle_protocol(_UserId, keep_alive, _) ->
+    #protocol_response{cmd = keep_alive, body = protocol_pb:encode_msg(#keep_alive_response{})};
+handle_protocol(UserId, Cmd, Body) ->
     ?DEBUG("Cmd ~p Body ~p ~n", [Cmd, Body]),
     try
         Request = list_to_atom(atom_to_list(Cmd) ++ "_request"),
-        Return = user_handle:handle(protocol_pb:decode_msg(Body, Request)),
+        Return = user_handle:ws_request(UserId, protocol_pb:decode_msg(Body, Request)),
         ?DEBUG("Cmd ~p Response ~w ~n", [Cmd, Return]),
-        #protocol_response{cmd = Cmd, code = ok, body = protocol_pb:encode_msg(Return)}
+        #protocol_response{cmd = Cmd, body = protocol_pb:encode_msg(Return)}
     catch Class:Reason:Stacktrace ->
         ?PR_CATCH(Class, Reason, Stacktrace),
-        #protocol_response{cmd = Cmd, code = error, body = tools:term_to_binary(Reason)}
+        #protocol_response{cmd = Cmd, body = tools:term_to_binary(Reason)}
     end.
 
 test(_) ->
