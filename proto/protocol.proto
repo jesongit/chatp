@@ -28,4 +28,5 @@ message user_login_request {
 
 message user_login_response {
     required uint64 user_id = 1;
+    required string username = 2;
 }

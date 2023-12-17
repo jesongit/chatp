@@ -65,7 +65,8 @@ handle_info({'DOWN', _Ref, process, Pid, Reason}, State = #state{username = User
     {stop, Reason, State};
 handle_info({gun_up, ConnPid, http}, State = #state{username = User}) ->
     ?INFO("Pid ~p Connect Successful.~n", [ConnPid]),
-    handle_cast({send, user_login, #user_login_request{username = User, password = User}}, State);
+    user_login(User, User),
+    {noreply, State};
 handle_info(keep_alive, State = #state{}) ->
     keep_alive(),
     {noreply, State#state{alive_time = tools:time()}};
@@ -94,17 +95,16 @@ code_change(_OldVsn, State = #state{}, _Extra) ->
 %%%===================================================================
 
 handle_response(#keep_alive_response{}) ->
-    %% 还在
+    %% 保活协议
     ok;
+handle_response(#user_login_response{user_id = UserId, username = Username}) ->
+    %% 登录成功
+    ets:update_element(?ETS_ROBOT, Username, {#user_robot.user_id, UserId});
 handle_response(_Protocol) ->
     ?ERROR("unknown protocol ~w ~n", [_Protocol]).
 
-handle_frame({close, Code, Reason}) ->
-    ?INFO("Close Code ~p Reason ~w~n", [Code, Reason]);
-handle_frame({binary, Binary}) ->
-    #protocol_response{cmd = Cmd, body = Body} = protocol_pb:decode_msg(Binary, protocol_response),
-    Response = list_to_atom(atom_to_list(Cmd) ++ "_response"),
-    handle_response(protocol_pb:decode_msg(Body, Response)).
+user_login(Username, Password) ->
+    gen_server:cast(self(), {send, user_login, #user_login_request{username = Username, password = Password}}).
 
 keep_alive() ->
     gen_server:cast(self(), {send, keep_alive, #keep_alive_request{}}),
@@ -130,19 +130,19 @@ connect_server() ->
         exit(timeout)
     end.
 
-pid(UserId) when is_integer(UserId)->
-    case ets:lookup(?ETS_ROBOT, UserId) of
+handle_frame({close, Code, Reason}) ->
+    ?INFO("Close Code ~p Reason ~w~n", [Code, Reason]);
+handle_frame({binary, Binary}) ->
+    #protocol_response{cmd = Cmd, body = Body} = protocol_pb:decode_msg(Binary, protocol_response),
+    Response = list_to_atom(atom_to_list(Cmd) ++ "_response"),
+    handle_response(protocol_pb:decode_msg(Body, Response)).
+
+pid(Username) when is_binary(Username) ->
+    case ets:lookup(?ETS_ROBOT, Username) of
+        [] ->
+            not_found;
         [#user_robot{pid = Pid}] ->
-            Pid;
-        [] ->
-            not_found
-    end;
-pid(Username) ->
-    case ets:match(?ETS_ROBOT, #user_robot{username = Username, pid = '$1', _ = '_'}) of
-        [[Pid]] ->
-            Pid;
-        [] ->
-            not_found
+            Pid
     end.
 
 test(_) ->

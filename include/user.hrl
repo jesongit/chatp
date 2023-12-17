@@ -20,8 +20,8 @@
 }).
 
 -record(user_robot, {
-    user_id = 0,
     username,
+    user_id,
     pid
 }).
 
