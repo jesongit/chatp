@@ -12,7 +12,9 @@
 
 -export([test/1, start/0, init/2, websocket_init/1, websocket_handle/2, websocket_info/2, terminate/3]).
 
+-include("user.hrl").
 -include("common.hrl").
+-include("ets_name.hrl").
 
 -define(IDLE_TIMEOUT,                                       60000). % 默认超时时间
 -record(state,                                              {user_id = 0}).
@@ -87,13 +89,24 @@ handle_protocol(UserId, Cmd, Body) ->
     ?DEBUG("Cmd ~p Body ~p ~n", [Cmd, Body]),
     try
         Request = list_to_atom(atom_to_list(Cmd) ++ "_request"),
-        Return = user_handle:ws_request(UserId, protocol_pb:decode_msg(Body, Request)),
+        Return = request(UserId, protocol_pb:decode_msg(Body, Request)),
         ?DEBUG("Cmd ~p Response ~w ~n", [Cmd, Return]),
         #protocol_response{cmd = Cmd, body = protocol_pb:encode_msg(Return)}
     catch Class:Reason:Stacktrace ->
         ?PR_CATCH(Class, Reason, Stacktrace),
         #protocol_response{cmd = Cmd, body = tools:term_to_binary(Reason)}
     end.
+
+request(_, #user_register_request{username = Username, password = Password}) ->
+    {ok, UserId} = user_mgr:register(Username, Password)
+    #user_register_response{user_id = UserId, username = Username};
+request(_, #user_login_request{username = Username, password = Password}) ->
+    {ok, UserId} = user_mgr:login(Username, Password)
+    #user_register_response{user_id = UserId, username = Username};
+request(UserId, Request) ->
+    {ok, Response} = user:request(user_mgr:pid(UserId), Request),
+    ?INFO("Request ~w~nResponse~w~n", [Request, Response]),
+    Response.
 
 test(_) ->
     skip.

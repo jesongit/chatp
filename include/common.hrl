@@ -39,9 +39,11 @@
         end
     end).
 
-%%-define(ETS_LOOKUP(Tab, Key, Def),              case ets:lookup(Tab, Key) of [] -> Def; Ret -> Ret end).
+-define(LOOKUP(Tab, Key),                         tools:ets_lookup(Tab, Key)).
+-define(INSERT(Tab, Data),                        tools:ets_insert(Tab, Data)).
+-define(MATCH(Tab, Pattern),                      tools:ets_match(Tab, Pattern)).
 
-
+-define(INIT_LIST,                              [global]).
 -define(APP_LIST,                               [lager, ranch, gun]).
 -define(MODULE_LIST,                            [id_utils, user_mgr, robot_mgr]).
 -define(SUPERVISOR_LIST,                        [user_sup, robot_sup]).

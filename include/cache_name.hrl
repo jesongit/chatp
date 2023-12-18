@@ -15,5 +15,7 @@
 -define(ETS_ROBOT,                          ets_robot).
 -define(ETS_ONLINE,                         ets_user_online).
 
+-define(CACHE_USER,                         cache_user).
+-define(CACHE_GLOBAL,                       cache_global).
 
 -endif.

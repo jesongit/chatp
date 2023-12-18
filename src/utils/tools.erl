@@ -21,5 +21,26 @@ term_to_binary(Term) when is_list(Term) orelse is_tuple(Term) orelse is_map(Term
 time() ->
     erlang:system_time(second).
 
+ets_lookup(Tab, Key) ->
+    case ets:lookup(Tab, Key) of
+        [] ->
+            undefined;
+        [Data] ->
+            Data
+    end.
+
+ets_insert(Tab, Data) ->
+    true = ets:insert(Tab, Data),
+    Data.
+
+ets_match(Tab, Pattern) ->
+    case ets:match_object(Tab, Pattern) of
+        [] ->
+            [];
+        [Data] ->
+            Data
+    end.
+
+
 test(_) ->
     skip.

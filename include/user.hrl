@@ -13,17 +13,26 @@
 -define(USER_H, true).
 
 -record(user_online, {
-    user_id = 0,
-    username,
-    net_pid,
-    pid
+    user_id = 0
+    , username
+    , net_pid
+    , pid
 }).
 
 -record(user_robot, {
-    username,
-    user_id,
-    pid
+    username
+    , user_id
+    , pid
 }).
 
+-record(user_state, {
+    user_id = 0
+}).
+
+-record(user, {
+    user_id = 0
+    , username = <<>>
+    , password = <<>>
+}).
 
 -endif.

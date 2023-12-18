@@ -20,10 +20,9 @@
 
 -define(SERVER, ?MODULE).
 
+-include("user.hrl").
 -include("common.hrl").
 -include("ets_name.hrl").
-
--record(state, {user_id}).
 
 %%%===================================================================
 %%% API
@@ -41,33 +40,40 @@ request(Pid, Request) ->
 
 init([UserId]) ->
     ?INFO("[~p] UserId ~p 启动完成", [?MODULE, UserId]),
-    {ok, #state{user_id = UserId}}.
+    {ok, #user_state{user_id = UserId}}.
 
-handle_call({request, Request}, _From, State = #state{user_id = UserId}) ->
+handle_call({request, Request}, _From, State = #user_state{}) ->
     try
-        Reply = user_handle:user_request(UserId, Request),
-        {reply, Reply, State}
+        [_, Mod | _] = string:split(atom_to_list(element(1, Request)), "_", all),
+        case erlang:apply(list_to_atom(Mod), request, [State, Request]) of
+            ok ->
+                {reply, #keep_alive_response{}, State};
+            {ok, NewState} ->
+                {reply, #keep_alive_response{}, NewState};
+            {ok, Reply, NewState} ->
+                {reply, Reply, NewState}
+        end
     catch Class:Reason:Stacktrace ->
         ?PR_CATCH(Class, Reason, Stacktrace),
         {reply, #protocol_message{message = Reason}}
     end;
-handle_call(_Request, _From, State = #state{}) ->
+handle_call(_Request, _From, State = #user_state{}) ->
     ?INFO("~p Request ~p From ~p~n", [?FUNCTION_NAME, _Request, _From]),
     {reply, ok, State}.
 
-handle_cast(_Request, State = #state{}) ->
+handle_cast(_Request, State = #user_state{}) ->
     ?INFO("~p Request ~p~n", [?FUNCTION_NAME, _Request]),
     {noreply, State}.
 
-handle_info(_Info, State = #state{}) ->
+handle_info(_Info, State = #user_state{}) ->
     ?INFO("~p Info ~p~n", [?FUNCTION_NAME, _Info]),
     {noreply, State}.
 
-terminate(_Reason, _State = #state{}) ->
+terminate(_Reason, _State = #user_state{}) ->
     ?INFO("~p Reason ~p~n", [?FUNCTION_NAME, _Reason]),
     ok.
 
-code_change(_OldVsn, State = #state{}, _Extra) ->
+code_change(_OldVsn, State = #user_state{}, _Extra) ->
     ?INFO("~p OldVsn ~p Extra ~p~n", [?FUNCTION_NAME, _OldVsn, _Extra]),
     {ok, State}.
 

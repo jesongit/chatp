@@ -16,6 +16,7 @@ start(_StartType, _StartArgs) ->
     {ok, _Pid} = chatp_sup:start_link(),
     [start_sup(Mod) || Mod <- ?SUPERVISOR_LIST],
     [start_mod(Mod) || Mod <- ?MODULE_LIST],
+    [Mod:init() || Mod <- ?INIT_LIST],
     user_ws:start().
 
 stop(_State) ->
