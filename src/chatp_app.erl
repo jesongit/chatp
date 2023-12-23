@@ -7,9 +7,17 @@
 
 -behaviour(application).
 
--export([start/2, stop/1, test/1]).
+-export([start/2, stop/1, test/1, start/0, stop/0]).
 
 -include("common.hrl").
+
+start() ->
+    ?INFO("chatp start."),
+    application:start(chatp).
+
+stop() ->
+    ?INFO("chatp stop."),
+    init:stop().
 
 start(_StartType, _StartArgs) ->
     [ok = start_app(App) || App <- ?APP_LIST],

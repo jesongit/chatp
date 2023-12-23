@@ -46,12 +46,12 @@ websocket_init(State) ->
 %% @doc 接受 ws 消息
 websocket_handle({binary, Binary}, State = #state{user_id = UserId}) ->
     ?DEBUG("Binary ~w ~n", [Binary]),
-    case catch protocol_pb:decode_msg(Binary, protocol_request) of
-        #protocol_request{cmd = Cmd, body = Body} ->
+    case catch protocol_pb:decode_msg(Binary, protocol) of
+        #protocol{cmd = Cmd, body = Body} ->
             Response = handle_protocol(UserId, Cmd, Body);
         _Ret ->
             ?ERROR("parse protocol error Ret ~w ~n", [Binary, _Ret]),
-            Response = #protocol_response{body = <<"协议解密失败"/utf8>>}
+            Response = #protocol{body = <<"协议解密失败"/utf8>>}
     end,
     {reply, {binary, protocol_pb:encode_msg(Response)}, State};
 websocket_handle(_Frame, State) ->
@@ -84,17 +84,17 @@ terminate(_Reason, _Req, _State) ->
     ok.
 
 handle_protocol(_UserId, keep_alive, _) ->
-    #protocol_response{cmd = keep_alive, body = protocol_pb:encode_msg(#keep_alive_response{})};
+    #protocol{cmd = keep_alive, body = protocol_pb:encode_msg(#keep_alive_response{})};
 handle_protocol(UserId, Cmd, Body) ->
     ?DEBUG("Cmd ~p Body ~p ~n", [Cmd, Body]),
     try
         Request = list_to_atom(atom_to_list(Cmd) ++ "_request"),
         Return = request(UserId, protocol_pb:decode_msg(Body, Request)),
         ?DEBUG("Cmd ~p Response ~w ~n", [Cmd, Return]),
-        #protocol_response{cmd = Cmd, body = protocol_pb:encode_msg(Return)}
+        #protocol{cmd = Cmd, body = protocol_pb:encode_msg(Return)}
     catch Class:Reason:Stacktrace ->
         ?PR_CATCH(Class, Reason, Stacktrace),
-        #protocol_response{cmd = Cmd, body = tools:term_to_binary(Reason)}
+        #protocol{body = tools:term_to_binary(Reason)}
     end.
 
 request(_, #user_register_request{username = Username, password = Password}) ->

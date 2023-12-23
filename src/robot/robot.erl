@@ -53,7 +53,7 @@ handle_call(_Request, _From, State = #state{}) ->
 
 handle_cast({send, Cmd, Body}, State = #state{pid = Pid, ref = Ref}) ->
     ?DEBUG("Send Cmd ~p Body ~w ~n", [Cmd, Body]),
-    Request = protocol_pb:encode_msg(#protocol_request{cmd = Cmd, body = protocol_pb:encode_msg(Body)}),
+    Request = protocol_pb:encode_msg(#protocol{cmd = Cmd, body = protocol_pb:encode_msg(Body)}),
     gun:ws_send(Pid, Ref, [{binary, Request}]),
     {noreply, State};
 handle_cast(_Request, State = #state{}) ->
@@ -125,7 +125,7 @@ handle_frame({close, Code, Reason}) ->
     ?INFO("Close Code ~p Reason ~w~n", [Code, Reason]);
 handle_frame({binary, Binary}) ->
     try
-        #protocol_response{cmd = Cmd, body = Body} = protocol_pb:decode_msg(Binary, protocol_response),
+        #protocol{cmd = Cmd, body = Body} = protocol_pb:decode_msg(Binary, protocol),
         Cmd == unknown andalso throw(Body),
         Response = list_to_atom(atom_to_list(Cmd) ++ "_response"),
         robot_handle:response(protocol_pb:decode_msg(Body, Response))

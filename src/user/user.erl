@@ -55,7 +55,7 @@ handle_call({request, Request}, _From, State = #user_state{}) ->
         end
     catch Class:Reason:Stacktrace ->
         ?PR_CATCH(Class, Reason, Stacktrace),
-        {reply, #protocol_message{message = Reason}}
+        {reply, #protocol{body = tools:term_to_binary(Reason)}}
     end;
 handle_call(_Request, _From, State = #user_state{}) ->
     ?INFO("~p Request ~p From ~p~n", [?FUNCTION_NAME, _Request, _From]),

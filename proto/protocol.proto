@@ -1,32 +1,15 @@
 syntax = "proto3";
 enum protocol_cmd {
-    unknown = 0;
+    error = 0;
     keep_alive = 1;
     user_login = 1001;
 }
-enum protocol_code {
-    error = 0;
-}
 
-// 请求协议
-message protocol_request {
+message protocol {
     protocol_cmd cmd = 1;
     bytes body = 2;
 }
 
-// 响应协议
-message protocol_response {
-    protocol_cmd cmd = 1;
-    bytes body = 3;
-}
-
-// 服务器内部错误
-message protocol_message {
-    protocol_code code = 1;
-    bytes message = 2;
-}
-
-// 正常的返回
 message keep_alive_request {}
 message keep_alive_response {}
 
