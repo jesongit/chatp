@@ -20,9 +20,9 @@
 
 -define(SERVER, ?MODULE).
 
--include("user.hrl").
+-include("cuser.hrl").
 -include("common.hrl").
--include("ets_name.hrl").
+-include("cache_name.hrl").
 
 -record(state, {}).
 

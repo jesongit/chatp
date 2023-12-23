@@ -7,39 +7,21 @@
 
 -behaviour(application).
 
--export([start/2, stop/1, test/1, start/0, stop/0]).
+-export([start/2, stop/1, test/1]).
 
 -include("common.hrl").
 
-start() ->
-    ?INFO("chatp start."),
-    application:start(chatp).
-
-stop() ->
-    ?INFO("chatp stop."),
-    init:stop().
-
 start(_StartType, _StartArgs) ->
-    [ok = start_app(App) || App <- ?APP_LIST],
-    {ok, _Pid} = chatp_sup:start_link(),
+    {ok, Pid} = chatp_sup:start_link(),
     [start_sup(Mod) || Mod <- ?SUPERVISOR_LIST],
     [start_mod(Mod) || Mod <- ?MODULE_LIST],
     [Mod:init() || Mod <- ?INIT_LIST],
-    user_ws:start().
+    {ok, WsPid} = cuser_ws:start(),
+    ?INFO("chatp pid ~p Cowboy ~p ~n", [Pid, WsPid]),
+    {ok, Pid}.   % 这里一定要返回顶部监督者的pid，不然init:stop()无法正常关闭
 
 stop(_State) ->
     ok.
-
-start_app(App) ->
-    case application:start(App) of
-        ok ->
-            io:format("App ~p start successful.~n", [App]);
-        {error, {already_started, App}} ->
-            ok;
-        {error, {not_started, Dep}} ->
-            ok = start_app(Dep),
-            start_app(App)
-    end.
 
 start_mod(Mod) ->
     start_child(Mod, worker).

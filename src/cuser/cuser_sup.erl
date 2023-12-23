@@ -7,7 +7,7 @@
 %%% @end
 %%% Created : 13. 12月 2023 17:54
 %%%-------------------------------------------------------------------
--module(user_sup).
+-module(cuser_sup).
 -author("Jeson").
 
 -behaviour(supervisor).

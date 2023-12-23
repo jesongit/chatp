@@ -14,9 +14,9 @@
     response/1
 ]).
 
--include("user.hrl").
+-include("cuser.hrl").
 -include("common.hrl").
--include("ets_name.hrl").
+-include("cache_name.hrl").
 
 response(#keep_alive_response{}) ->
     %% 保活协议

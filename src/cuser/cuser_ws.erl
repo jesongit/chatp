@@ -7,14 +7,14 @@
 %%% @end
 %%% Created : 13. 12月 2023 10:51
 %%%-------------------------------------------------------------------
--module(user_ws).
+-module(cuser_ws).
 -author("Jeson").
 
 -export([test/1, start/0, init/2, websocket_init/1, websocket_handle/2, websocket_info/2, terminate/3]).
 
--include("user.hrl").
+-include("cuser.hrl").
 -include("common.hrl").
--include("ets_name.hrl").
+-include("cache_name.hrl").
 
 -define(IDLE_TIMEOUT,                                       60000). % 默认超时时间
 -record(state,                                              {user_id = 0}).
@@ -23,7 +23,7 @@ start() ->
     Dispatch = cowboy_router:compile([
         {'_', [{"/ws", ?MODULE, []}]}
     ]),
-    {ok, Port} = application:get_env(chat_p, port),
+    {ok, Port} = application:get_env(chatp, port),
     ?INFO("WebSocket Port ~p ~n", [Port]),
     {ok, Pid} = cowboy:start_clear(my_http_listener,
         [{port, Port}], #{env => #{dispatch => Dispatch}}
@@ -98,13 +98,13 @@ handle_protocol(UserId, Cmd, Body) ->
     end.
 
 request(_, #user_register_request{username = Username, password = Password}) ->
-    {ok, UserId} = user_mgr:register(Username, Password)
+    {ok, UserId} = cuser_mgr:register(Username, Password),
     #user_register_response{user_id = UserId, username = Username};
 request(_, #user_login_request{username = Username, password = Password}) ->
-    {ok, UserId} = user_mgr:login(Username, Password)
+    {ok, UserId} = cuser_mgr:login(Username, Password),
     #user_register_response{user_id = UserId, username = Username};
 request(UserId, Request) ->
-    {ok, Response} = user:request(user_mgr:pid(UserId), Request),
+    {ok, Response} = cuser:request(cuser_mgr:pid(UserId), Request),
     ?INFO("Request ~w~nResponse~w~n", [Request, Response]),
     Response.
 

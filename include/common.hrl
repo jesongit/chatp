@@ -13,13 +13,13 @@
 
 -include("protocol_pb.hrl").
 
--define(DEBUG(Format, Param),                   lager:debug("~p:~p:~p " ++ Format, [?MODULE, ?FUNCTION_NAME, ?LINE | Param])).
+-define(DEBUG(Format, Param),                   lager:debug(Format, Param)).
 -define(DEBUG(String),                          ?DEBUG(String, [])).
 
--define(INFO(Format, Param),                    lager:info("~p:~p:~p " ++ Format, [?MODULE, ?FUNCTION_NAME, ?LINE | Param])).
+-define(INFO(Format, Param),                    lager:info(Format, Param)).
 -define(INFO(String),                           ?INFO(String, [])).
 
--define(ERROR(Format, Param),                   lager:error("~p:~p:~p " ++ Format, [?MODULE, ?FUNCTION_NAME, ?LINE | Param])).
+-define(ERROR(Format, Param),                   lager:error(Format, Param)).
 -define(ERROR(String),                          ?ERROR(String, [])).
 
 -define(PR_CATCH(Class, Reason, Stacktrace),    ?ERROR("~nStacktrace: ~s", [lager:pr_stacktrace(Stacktrace, {Class, Reason})])).
@@ -39,14 +39,14 @@
         end
     end).
 
--define(LOOKUP(Tab, Key),                         tools:ets_lookup(Tab, Key)).
--define(INSERT(Tab, Data),                        tools:ets_insert(Tab, Data)).
--define(MATCH(Tab, Pattern),                      tools:ets_match(Tab, Pattern)).
+-define(LOOKUP(Tab, Key),                           tools:ets_lookup(Tab, Key)).
+-define(INSERT(Tab, Data),                          tools:ets_insert(Tab, Data)).
+-define(MATCH(Tab, Pattern),                        tools:ets_match(Tab, Pattern)).
 
--define(INIT_LIST,                              [global]).
--define(APP_LIST,                               [lager, ranch, gun]).
--define(MODULE_LIST,                            [id_utils, user_mgr, robot_mgr]).
--define(SUPERVISOR_LIST,                        [user_sup, robot_sup]).
+-define(INIT_LIST,                                  [global_data]).
+-define(APP_LIST,                                   [ranch, gun, chatp]).
+-define(MODULE_LIST,                                [reloader, id_utils, cuser_mgr, robot_mgr]).
+-define(SUPERVISOR_LIST,                            [cuser_sup, robot_sup]).
 
 %% id 分类
 -define(ID_TYPE_USER,                           1).

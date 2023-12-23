@@ -39,8 +39,8 @@ gen_id(Type) ->
 %%%===================================================================
 
 init([]) ->
+    {ok, SvrId} = application:get_env(chatp, server_id),
     ?INFO("[~p] 启动完成", [?MODULE]),
-    {ok, SvrId} = application:get_env(chat_p, server_id),
     {ok, #state{id_map = #{}, svr_id = SvrId}}.
 
 handle_call({gen_id, Type}, _From, State = #state{svr_id = SvrId, id_map = Old}) ->

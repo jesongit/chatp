@@ -7,7 +7,7 @@
 %%% @end
 %%% Created : 13. 12月 2023 17:23
 %%%-------------------------------------------------------------------
--module(user).
+-module(cuser).
 -author("Jeson").
 
 -behaviour(gen_server).
@@ -20,9 +20,9 @@
 
 -define(SERVER, ?MODULE).
 
--include("user.hrl").
+-include("cuser.hrl").
 -include("common.hrl").
--include("ets_name.hrl").
+-include("cache_name.hrl").
 
 %%%===================================================================
 %%% API

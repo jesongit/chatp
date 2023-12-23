@@ -7,7 +7,7 @@
 %%% @end
 %%% Created : 18. 12月 2023 18:01
 %%%-------------------------------------------------------------------
--module(global).
+-module(global_data).
 -author("Jeson").
 
 -compile(export_all).

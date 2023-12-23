@@ -7,7 +7,7 @@
 %%% @end
 %%% Created : 13. 12月 2023 17:39
 %%%-------------------------------------------------------------------
--module(user_mgr).
+-module(cuser_mgr).
 -author("Jeson").
 
 -behaviour(gen_server).
@@ -18,7 +18,7 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--include("user.hrl").
+-include("cuser.hrl").
 -include("common.hrl").
 -include("cache_name.hrl").
 
@@ -80,7 +80,7 @@ do_login(NetPid, Username, Password) ->
     #user{password = Pass, user_id = UserId} = user(Username),
     Pass /= Password andalso throw(password),
     ?LOOKUP(?ETS_ONLINE, UserId) /= undefined andalso throw(online),
-    {ok, Pid} = user_sup:start_child(UserId),
+    {ok, Pid} = cuser_sup:start_child(UserId),
     ets:insert(?ETS_ONLINE, #user_online{user_id = UserId, pid = Pid, net_pid = NetPid, username = Username}),
     {ok, UserId}.
 

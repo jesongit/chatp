@@ -11,9 +11,9 @@
 -export([start_link/1, start/1, stop/0, stop/1, send/3, test/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--include("user.hrl").
+-include("cuser.hrl").
 -include("common.hrl").
--include("ets_name.hrl").
+-include("cache_name.hrl").
 
 -define(SERVER,                             robot_mgr).
 -define(SERVER_IP,                          "127.0.0.1").
@@ -106,7 +106,7 @@ check_alive(State = #state{alive_time = AliveTime}) ->
     ?IF(tools:time() - AliveTime > ?KEEP_ALIVE_INTERVAL div 1000 * 2, {stop, State}, {noreply, State}).
 
 connect_server() ->
-    {ok, Port} = application:get_env(chat_p, port),
+    {ok, Port} = application:get_env(chatp, port),
     {ok, ConnPid} = gun:open(?SERVER_IP, Port),
     _MRef = monitor(process, ConnPid),
     StreamRef = gun:ws_upgrade(ConnPid, "/ws"),

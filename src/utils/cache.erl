@@ -12,7 +12,7 @@
 
 -export([test/1, new/3, lookup/2, insert/2, match/2]).
 
--define(DETS_DIR(File),                         "./dets/" ++ File ++ ".dets").
+-define(DETS_DIR(File),                         "./dets/" ++ atom_to_list(File) ++ ".dets").
 new(Name, Type, KeyPos) ->
     {ok, Name} = dets:open_file(Name, [{type, Type}, {keypos, KeyPos}, {file, ?DETS_DIR(Name)}]),
     ets:new(Name, [named_table, Type, {keypos, KeyPos}]).
